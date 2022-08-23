@@ -1,14 +1,21 @@
 import { __prod__ } from "./constants";
 import { Post } from "./entities/Post";
 import { MikroORM } from "@mikro-orm/core";
+import path from "path";
 
 export default {
-  //   entities: ["./dist/entities/**/*.js"], // path to our JS entities (dist), relative to `baseDir`
+  migrations: {
+    path: path.join(__dirname, "./migrations"),
+    // pathTs: "src/migrations",
+    pattern: /^[\w-]+\d+\.[tj]s$/,
+  },
+  // entities: ["./dist/entities/**/*.js"], // path to our JS entities (dist), relative to `baseDir`
+  // entitiesTs: ["./src/entities/**/*.ts"],
   entities: [Post],
-  //   entitiesTs: ["./src/entities/**/*.ts"],
   dbName: "lireddit",
   user: "postgres",
   password: "postgres",
   debug: !__prod__,
   type: "postgresql",
 } as Parameters<typeof MikroORM.init>[0];
+// };

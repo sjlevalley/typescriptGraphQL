@@ -2,24 +2,38 @@ import { MikroORM } from "@mikro-orm/core";
 import { __prod__ } from "./constants";
 import { Post } from "./entities/Post";
 import mikroConfig from "./mikro-orm.config";
-import { EntityManager } from "@mikro-orm/postgresql";
-import { IDatabaseDriver } from "@mikro-orm/core/drivers/IDatabaseDriver";
 
 const main = async () => {
-  const orm = await MikroORM.init<IDatabaseDriver>(mikroConfig);
-  const em = orm.em as EntityManager;
-  //   const qb = em.createQueryBuilder(...);
+  const orm = await MikroORM.init(mikroConfig);
+  // const orm = await MikroORM.init<PostgreSqlDriver>({
+  //   migrations: {
+  //     path: path.join(__dirname, "./migrations"),
+  //     // pathTs: "src/migrations",
+  //     // pattern: /^[\w-]+\d+\.[tj]s$/,
+  //   },
+  //   //   entities: ["./dist/entities/**/*.js"], // path to our JS entities (dist), relative to `baseDir`
+  //   //   entitiesTs: ["./src/entities/**/*.ts"],
+  //   entities: [Post],
+  //   dbName: "lireddit",
+  //   user: "postgres",
+  //   password: "postgres",
+  //   debug: !__prod__,
+  //   type: "postgresql",
+  // });
+  await orm.getMigrator().up();
 
-  // Create an instance of Post object (does nothing to database)
-  //   const post = orm.em.create(Post, {
-  //     title: "My First Post",
-  //     updatedAt: new Date(),
-  //     createdAt: new Date(),
-  //   });
-  const post = new Post();
+  const em = orm.em.fork();
+  const post = {
+    title: "My First Post",
+    updatedAt: new Date(),
+    createdAt: new Date(),
+  };
 
   // Add to database
-  //   await orm.em.persistAndFlush(post);
+  await em.create(Post, post);
+
+  const posts = await em.find(Post, {});
+  console.log(posts);
 };
 
 main().catch((e) => {
