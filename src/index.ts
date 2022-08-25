@@ -1,42 +1,48 @@
+import "reflect-metadata";
 import { MikroORM } from "@mikro-orm/core";
 import { __prod__ } from "./constants";
-import { Post } from "./entities/Post";
 import mikroConfig from "./mikro-orm.config";
-import { EntityManager } from "@mikro-orm/postgresql";
-import type { PostgreSqlDriver } from "@mikro-orm/postgresql";
-import path from "path";
+import express from "express";
+import { ApolloServer } from "apollo-server-express";
+import { buildSchema } from "type-graphql";
+import { HelloResolver } from "./resolvers/hello";
+import { PostResolver } from "./resolvers/post";
 
 const main = async () => {
-  // const orm = await MikroORM.init(mikroConfig);
-  const orm = await MikroORM.init<PostgreSqlDriver>({
-    migrations: {
-      path: path.join(__dirname, "./migrations"),
-      // pathTs: "src/migrations",
-      // pattern: /^[\w-]+\d+\.[tj]s$/,
-    },
-    //   entities: ["./dist/entities/**/*.js"], // path to our JS entities (dist), relative to `baseDir`
-    //   entitiesTs: ["./src/entities/**/*.ts"],
-    entities: [Post],
-    dbName: "lireddit",
-    user: "postgres",
-    password: "postgres",
-    debug: !__prod__,
-    type: "postgresql",
-  });
+  const orm = await MikroORM.init(mikroConfig);
+
   await orm.getMigrator().up();
   const em = orm.em.fork();
 
-  const post = em.create(Post, {
-    title: "My First Post",
-    updatedAt: new Date(),
-    createdAt: new Date(),
+  const app = express();
+
+  const apolloServer = new ApolloServer({
+    schema: await buildSchema({
+      resolvers: [HelloResolver, PostResolver],
+      validate: false,
+    }),
+    context: () => ({ em }),
   });
+
+  await apolloServer.start();
+
+  apolloServer.applyMiddleware({ app });
+
+  // const post = em.create(Post, {
+  //   title: "My First Post",
+  //   updatedAt: new Date(),
+  //   createdAt: new Date(),
+  // });
 
   // Add to database
   // em.persistAndFlush(post);
 
-  const posts = await em.find(Post, {});
-  console.log(posts);
+  // const posts = await em.find(Post, {});
+  // console.log(posts);
+
+  app.listen(4000, () => {
+    console.log("App now listening on Localhost:4000");
+  });
 };
 
 main().catch((e) => {
