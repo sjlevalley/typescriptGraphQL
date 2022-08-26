@@ -3,7 +3,7 @@ import { Field, Int, ObjectType } from "type-graphql";
 
 @ObjectType() // Added for type-graphql
 @Entity()
-export class Post {
+export class User {
   [OptionalProps]?: "createdAt" | "updatedAt";
 
   @Field(() => Int) // Added for type-graphql, if this decorator is not added, this field cannot be queried
@@ -19,6 +19,9 @@ export class Post {
   updatedAt: Date = new Date();
 
   @Field()
+  @Property({ type: "text", unique: true })
+  username!: string;
+
   @Property({ type: "text" })
-  title!: string;
+  password!: string;
 }

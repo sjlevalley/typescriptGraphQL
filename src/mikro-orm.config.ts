@@ -1,5 +1,6 @@
 import { __prod__ } from "./constants";
 import { Post } from "./entities/Post";
+import { User } from "./entities/User";
 import { MikroORM } from "@mikro-orm/core";
 import path from "path";
 
@@ -10,8 +11,8 @@ export default {
     pattern: /^[\w-]+\d+\.[tj]s$/,
   },
   // entities: ["./dist/entities/**/*.js"], // path to our JS entities (dist), relative to `baseDir`
-  // entitiesTs: ["./src/entities/**/*.ts"],
-  entities: [Post],
+  // entitiesTs: ["./entities/**/*.ts"],
+  entities: [Post, User],
   dbName: "lireddit",
   user: "postgres",
   password: "postgres",
