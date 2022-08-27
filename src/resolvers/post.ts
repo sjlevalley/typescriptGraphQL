@@ -36,6 +36,7 @@ export class PostResolver {
     @Ctx() ctx: MyContext
   ): Promise<Post | null> {
     const post = await ctx.em.findOne(Post, { id });
+    // Need to handle errors properly here
     if (!post) {
       return null;
     }
