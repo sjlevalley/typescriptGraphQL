@@ -44,8 +44,9 @@ class UserResponse {
 export class UserResolver {
   @Query(() => User, { nullable: true })
   async me(@Ctx() { em, req }: MyContext) {
+    console.log(req.session!);
     // if you are not logged in
-    if (!req.session.userId) {
+    if (!req.session!.userId) {
       return null;
     }
     const user = await em.findOne(User, { id: req.session!.userId });
@@ -60,11 +61,6 @@ export class UserResolver {
     const userExists = await ctx.em.findOne(User, {
       username: options.username,
     });
-    if (userExists) {
-      return {
-        errors: [{ field: "Username", message: "Username already exists" }],
-      };
-    }
     if (options.username.trim().length <= 2) {
       return {
         errors: [
@@ -79,13 +75,22 @@ export class UserResolver {
         ],
       };
     }
+    if (userExists) {
+      return {
+        errors: [{ field: "Username", message: "Username already exists" }],
+      };
+    }
     const hashedPassword = await argon2.hash(options.password);
-    const user = ctx.em.create(User, {
+    const user = await ctx.em.create(User, {
       username: options.username,
       password: hashedPassword,
     });
     // Alternatively, to handle duplicate user error, can wrap the persistAndFlush around a try/catch and return the error in the catch statement
     await ctx.em.persistAndFlush(user);
+
+    // Stores the user ID on the cookie and keeps them logged in upon registering
+    ctx.req.session!.userId = user.id;
+
     return { user };
   }
 

@@ -43,16 +43,23 @@ const main = async () => {
       cookie: {
         maxAge: 1000 * 60 * 60 * 24 * 365 * 10, // 10 years
         httpOnly: true,
-        sameSite: "none",
-        // sameSite: "lax",
-        // secure: __prod__,
-        secure: true, // cookie only works in https, if not using https in prod, you want it to be false. Also usually set it to false when trying to get things set up
+        sameSite: "lax",
+        secure: __prod__,
+        // sameSite: "none",
+        // secure: true, // cookie only works in https, if not using https in prod, you want it to be false. Also usually set it to false when trying to get things set up
       },
       // secret: process.env.REDIS_SECRET,
       secret: "3lMGIPkuu5#8O9ga$ywxI0zEVv3@6c**Gh5^9Nm5pcVHj0wyE4j#QChmEpLS",
       resave: false,
     })
   );
+
+  // app.set("trust proxy", true); //process.env.NODE_ENV !== "production");
+  // app.set("Access-Control-Allow-Origin", [
+  //   "https://studio.apollographql.com",
+  //   "http://localhost:4000",
+  // ]);
+  // app.set("Access-Control-Allow-Credentials", true);
 
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
@@ -64,7 +71,18 @@ const main = async () => {
 
   await apolloServer.start();
 
-  apolloServer.applyMiddleware({ app });
+  apolloServer.applyMiddleware({
+    app,
+    cors: {
+      origin: ["https://studio.apollographql.com", "http://localhost:4000"],
+      credentials: true,
+    },
+  });
+
+  // Added the followiing headers in the GraphQL Sandbox
+  // Access-Control-Allow-Origin: ["https://studio.apollographql.com", "http://localhost:4000",]
+  // Access-Control-Allow-Credentials: true
+  // x-forwarded-proto: https
 
   app.listen(4000, () => {
     console.log("App now listening on Localhost:4000");

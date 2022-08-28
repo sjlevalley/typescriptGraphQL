@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 require("dotenv/config");
 require("reflect-metadata");
 const core_1 = require("@mikro-orm/core");
+const constants_1 = require("./constants");
 const mikro_orm_config_1 = __importDefault(require("./mikro-orm.config"));
 const express_1 = __importDefault(require("express"));
 const apollo_server_express_1 = require("apollo-server-express");
@@ -34,8 +35,8 @@ const main = async () => {
         cookie: {
             maxAge: 1000 * 60 * 60 * 24 * 365 * 10,
             httpOnly: true,
-            sameSite: "none",
-            secure: true,
+            sameSite: "lax",
+            secure: constants_1.__prod__,
         },
         secret: "3lMGIPkuu5#8O9ga$ywxI0zEVv3@6c**Gh5^9Nm5pcVHj0wyE4j#QChmEpLS",
         resave: false,
@@ -48,7 +49,13 @@ const main = async () => {
         context: ({ req, res }) => ({ em, req, res }),
     });
     await apolloServer.start();
-    apolloServer.applyMiddleware({ app });
+    apolloServer.applyMiddleware({
+        app,
+        cors: {
+            origin: ["https://studio.apollographql.com", "http://localhost:4000"],
+            credentials: true,
+        },
+    });
     app.listen(4000, () => {
         console.log("App now listening on Localhost:4000");
     });
