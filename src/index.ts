@@ -12,7 +12,7 @@ import { UserResolver } from "./resolvers/user";
 import session from "express-session";
 import { createClient } from "redis";
 import connectRedis from "connect-redis";
-import { MyContext } from "./types";
+import cors from "cors";
 
 declare module "express-session" {
   interface SessionData {
@@ -31,6 +31,14 @@ const main = async () => {
   let RedisStore = connectRedis(session);
   let redisClient = createClient({ legacyMode: true });
   redisClient.connect().catch(console.error);
+
+  const corsOptions = {
+    origin: "http://localhost:3000",
+    credentials: true, // access-control-allow-credentials:true
+  };
+
+  // Apply cors to all routes
+  app.use(cors(corsOptions));
 
   app.use(
     session({
@@ -58,6 +66,7 @@ const main = async () => {
   // app.set("Access-Control-Allow-Origin", [
   //   "https://studio.apollographql.com",
   //   "http://localhost:4000",
+  //   "http://localhost:3000",
   // ]);
   // app.set("Access-Control-Allow-Credentials", true);
 
@@ -66,17 +75,22 @@ const main = async () => {
       resolvers: [HelloResolver, PostResolver, UserResolver],
       validate: false,
     }),
-    context: ({ req, res }): MyContext => ({ em, req, res }),
+    context: ({ req, res }) => ({ em, req, res }),
   });
 
   await apolloServer.start();
 
   apolloServer.applyMiddleware({
     app,
-    cors: {
-      origin: ["https://studio.apollographql.com", "http://localhost:4000"],
-      credentials: true,
-    },
+    cors: false,
+    // cors: {
+    //   origin: [
+    //     "https://studio.apollographql.com",
+    //     // "http://localhost:4000",
+    //     "http://localhost:3000",
+    //   ],
+    //   credentials: true,
+    // },
   });
 
   // Added the followiing headers in the GraphQL Sandbox
