@@ -64,20 +64,20 @@ export class UserResolver {
     if (options.username.trim().length <= 2) {
       return {
         errors: [
-          { field: "Username", message: "Length must be greater than 2" },
+          { field: "username", message: "Length must be greater than 2" },
         ],
       };
     }
     if (options.password.trim().length <= 6) {
       return {
         errors: [
-          { field: "Password", message: "Length must be greater than 6" },
+          { field: "password", message: "Length must be greater than 6" },
         ],
       };
     }
     if (userExists) {
       return {
-        errors: [{ field: "Username", message: "Username already exists" }],
+        errors: [{ field: "username", message: "Username already exists" }],
       };
     }
     const hashedPassword = await argon2.hash(options.password);
@@ -103,7 +103,7 @@ export class UserResolver {
     if (!user) {
       return {
         errors: [
-          { field: "Login Credentials", message: "Credentials invalid" },
+          { field: "login credentials", message: "Credentials invalid" },
         ],
       };
     }
