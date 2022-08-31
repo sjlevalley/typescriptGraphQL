@@ -27,7 +27,11 @@ const main = async () => {
     let redisClient = (0, redis_1.createClient)({ legacyMode: true });
     redisClient.connect().catch(console.error);
     const corsOptions = {
-        origin: "http://localhost:3000",
+        origin: [
+            "https://studio.apollographql.com",
+            "http://localhost:4000",
+            "http://localhost:3000",
+        ],
         credentials: true,
     };
     app.use((0, cors_1.default)(corsOptions));

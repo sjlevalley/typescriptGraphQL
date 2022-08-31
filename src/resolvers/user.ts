@@ -58,9 +58,6 @@ export class UserResolver {
     @Arg("options", () => UsernamePasswordInput) options: UsernamePasswordInput,
     @Ctx() ctx: MyContext
   ): Promise<UserResponse> {
-    const userExists = await ctx.em.findOne(User, {
-      username: options.username,
-    });
     if (options.username.trim().length <= 2) {
       return {
         errors: [
@@ -75,18 +72,27 @@ export class UserResolver {
         ],
       };
     }
-    if (userExists) {
-      return {
-        errors: [{ field: "username", message: "Username already exists" }],
-      };
-    }
     const hashedPassword = await argon2.hash(options.password);
     const user = await ctx.em.create(User, {
       username: options.username,
       password: hashedPassword,
     });
     // Alternatively, to handle duplicate user error, can wrap the persistAndFlush around a try/catch and return the error in the catch statement
-    await ctx.em.persistAndFlush(user);
+    try {
+      await ctx.em.persistAndFlush(user);
+    } catch (e) {
+      console.error(e);
+      if (e.code === "23505") {
+        return {
+          errors: [
+            {
+              field: "username",
+              message: "Username already exists",
+            },
+          ],
+        };
+      }
+    }
 
     // Stores the user ID on the cookie and keeps them logged in upon registering
     ctx.req.session!.userId = user.id;
@@ -102,9 +108,7 @@ export class UserResolver {
     const user = await em.findOne(User, { username: options.username });
     if (!user) {
       return {
-        errors: [
-          { field: "login credentials", message: "Credentials invalid" },
-        ],
+        errors: [{ field: "username", message: "Credentials invalid" }],
       };
     }
     const validPassword = await argon2.verify(user.password, options.password);
