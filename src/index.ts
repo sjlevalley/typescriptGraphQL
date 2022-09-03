@@ -13,6 +13,7 @@ import session from "express-session";
 import { createClient } from "redis";
 import connectRedis from "connect-redis";
 import cors from "cors";
+import { sendEmail } from "./utils/sendEmail";
 
 declare module "express-session" {
   interface SessionData {
@@ -21,6 +22,7 @@ declare module "express-session" {
 }
 
 const main = async () => {
+  // sendEmail("usmariner@proton.me", "Hello There");
   const orm = await MikroORM.init(mikroConfig);
 
   await orm.getMigrator().up();

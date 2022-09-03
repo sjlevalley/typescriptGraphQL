@@ -4,7 +4,7 @@ import { Field, Int, ObjectType } from "type-graphql";
 @ObjectType() // Added for type-graphql
 @Entity()
 export class User {
-  [OptionalProps]?: "createdAt" | "updatedAt";
+  [OptionalProps]?: "createdAt" | "updatedAt" | "email";
 
   @Field(() => Int) // Added for type-graphql, if this decorator is not added, this field cannot be queried
   @PrimaryKey()
@@ -21,6 +21,10 @@ export class User {
   @Field()
   @Property({ type: "text", unique: true })
   username!: string;
+
+  @Field()
+  @Property({ type: "text", unique: true })
+  email!: string;
 
   @Property({ type: "text" })
   password!: string;

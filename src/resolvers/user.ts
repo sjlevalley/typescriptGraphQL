@@ -12,6 +12,7 @@ import {
 } from "type-graphql";
 import argon2 from "argon2";
 import { COOKIE_NAME } from "../constants";
+import { validateEmail } from "../utils/validateEmail";
 
 // Alternate to using the @Arg, create a class of InputType
 // @InputTypes are used for arguments for mutations/queries (as opposed to @ObjectTypes, which are returned)
@@ -21,6 +22,8 @@ class UsernamePasswordInput {
   username: string;
   @Field()
   password: string;
+  @Field()
+  email: string;
 }
 
 @ObjectType()
@@ -43,6 +46,12 @@ class UserResponse {
 
 @Resolver()
 export class UserResolver {
+  @Mutation(() => Boolean)
+  async forgotPassword(@Arg("email") email: string, @Ctx() { em }: MyContext) {
+    const user = await em.findOne(User, { email });
+    return true;
+  }
+
   @Query(() => User, { nullable: true })
   async me(@Ctx() { em, req }: MyContext) {
     console.log(req.session!);
@@ -66,6 +75,11 @@ export class UserResolver {
         ],
       };
     }
+    if (validateEmail(options.email)) {
+      return {
+        errors: [{ field: "email", message: "Please enter a valid email" }],
+      };
+    }
     if (options.password.trim().length <= 6) {
       return {
         errors: [
@@ -76,6 +90,7 @@ export class UserResolver {
     const hashedPassword = await argon2.hash(options.password);
     const user = await ctx.em.create(User, {
       username: options.username,
+      email: options.email,
       password: hashedPassword,
     });
     // Alternatively, to handle duplicate user error, can wrap the persistAndFlush around a try/catch and return the error in the catch statement
@@ -103,16 +118,22 @@ export class UserResolver {
 
   @Mutation(() => UserResponse)
   async login(
-    @Arg("options", () => UsernamePasswordInput) options: UsernamePasswordInput,
+    @Arg("usernameOrEmail") usernameOrEmail: string,
+    @Arg("password") password: string,
     @Ctx() { em, req }: MyContext
   ): Promise<UserResponse> {
-    const user = await em.findOne(User, { username: options.username });
+    const user = await em.findOne(
+      User,
+      validateEmail(usernameOrEmail)
+        ? { email: usernameOrEmail }
+        : { username: usernameOrEmail }
+    );
     if (!user) {
       return {
         errors: [{ field: "username", message: "Credentials invalid" }],
       };
     }
-    const validPassword = await argon2.verify(user.password, options.password);
+    const validPassword = await argon2.verify(user.password, password);
     if (!validPassword) {
       return {
         errors: [{ field: "password", message: "Credentials invalid" }],
