@@ -4,27 +4,22 @@ import {
   Arg,
   Ctx,
   Field,
-  InputType,
   Mutation,
   ObjectType,
   Query,
   Resolver,
 } from "type-graphql";
 import argon2 from "argon2";
-import { COOKIE_NAME } from "../constants";
+import {
+  COOKIE_NAME,
+  FORGET_PASSWORD_PREFIX,
+  FORGET_PASSWORD_VALID_DURATION,
+} from "../constants";
 import { validateEmail } from "../utils/validateEmail";
-
-// Alternate to using the @Arg, create a class of InputType
-// @InputTypes are used for arguments for mutations/queries (as opposed to @ObjectTypes, which are returned)
-@InputType({ description: "Username & Password" })
-class UsernamePasswordInput {
-  @Field()
-  username: string;
-  @Field()
-  password: string;
-  @Field()
-  email: string;
-}
+import { UsernamePasswordInput } from "./UsernamePasswordInput";
+import { validateRegister } from "../utils/validateRegister";
+import { sendEmail } from "../utils/sendEmail";
+import { v4 as uuidV4 } from "uuid";
 
 @ObjectType()
 class FieldError {
@@ -46,9 +41,62 @@ class UserResponse {
 
 @Resolver()
 export class UserResolver {
+  @Mutation(() => UserResponse)
+  async changePassword(
+    @Arg("token") token: string,
+    @Arg("newPassword") newPassword: string,
+    @Ctx() { em, redis, req }: MyContext
+  ): Promise<UserResponse> {
+    if (newPassword.trim().length <= 6) {
+      return {
+        errors: [
+          { field: "newPassword", message: "Length must be greater than 6" },
+        ],
+      };
+    }
+
+    const userId = await redis.get(FORGET_PASSWORD_PREFIX + token);
+    if (!userId) {
+      return {
+        errors: [{ field: "token", message: "Token Expired" }],
+      };
+    }
+    console.log(userId);
+
+    const user = await em.findOne(User, { id: +userId });
+    if (!user) {
+      return {
+        errors: [{ field: "token", message: "User no longer exists" }],
+      };
+    }
+    user.password = await argon2.hash(newPassword);
+    await em.persistAndFlush(user);
+
+    // Log in user after password change
+    req.session.userId = user.id;
+
+    return { user };
+  }
+
   @Mutation(() => Boolean)
-  async forgotPassword(@Arg("email") email: string, @Ctx() { em }: MyContext) {
+  async forgotPassword(
+    @Arg("email") email: string,
+    @Ctx() { em, redis }: MyContext
+  ) {
     const user = await em.findOne(User, { email });
+    if (!user) {
+      // email not in db
+      return true; // returning true prevents people from fishing and trying to find users' emails
+    }
+    const token = uuidV4();
+    await redis.set(
+      FORGET_PASSWORD_PREFIX + token,
+      user.id,
+      "EX",
+      FORGET_PASSWORD_VALID_DURATION
+    );
+    const resetPasswordLink = `<a href="http://localhost:3000/change-password/${token}">Click here to reset password</a>`;
+    await sendEmail(email, resetPasswordLink);
     return true;
   }
 
@@ -68,24 +116,9 @@ export class UserResolver {
     @Arg("options", () => UsernamePasswordInput) options: UsernamePasswordInput,
     @Ctx() ctx: MyContext
   ): Promise<UserResponse> {
-    if (options.username.trim().length <= 2) {
-      return {
-        errors: [
-          { field: "username", message: "Length must be greater than 2" },
-        ],
-      };
-    }
-    if (validateEmail(options.email)) {
-      return {
-        errors: [{ field: "email", message: "Please enter a valid email" }],
-      };
-    }
-    if (options.password.trim().length <= 6) {
-      return {
-        errors: [
-          { field: "password", message: "Length must be greater than 6" },
-        ],
-      };
+    const errors = validateRegister(options);
+    if (errors) {
+      return { errors };
     }
     const hashedPassword = await argon2.hash(options.password);
     const user = await ctx.em.create(User, {
@@ -130,13 +163,13 @@ export class UserResolver {
     );
     if (!user) {
       return {
-        errors: [{ field: "username", message: "Credentials invalid" }],
+        errors: [{ field: "usernameOrEmail", message: "Invalid credentials" }],
       };
     }
     const validPassword = await argon2.verify(user.password, password);
     if (!validPassword) {
       return {
-        errors: [{ field: "password", message: "Credentials invalid" }],
+        errors: [{ field: "password", message: "Invalid credentials" }],
       };
     }
 

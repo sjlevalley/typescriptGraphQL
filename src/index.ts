@@ -10,10 +10,10 @@ import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/post";
 import { UserResolver } from "./resolvers/user";
 import session from "express-session";
-import { createClient } from "redis";
+import Redis from "ioredis";
 import connectRedis from "connect-redis";
 import cors from "cors";
-import { sendEmail } from "./utils/sendEmail";
+// import { sendEmail } from "./utils/sendEmail";
 
 declare module "express-session" {
   interface SessionData {
@@ -29,10 +29,10 @@ const main = async () => {
   const em = orm.em.fork();
 
   const app = express();
+  const redis = new Redis();
 
   let RedisStore = connectRedis(session);
-  let redisClient = createClient({ legacyMode: true });
-  redisClient.connect().catch(console.error);
+  // redis.connect().catch(console.error);
 
   const corsOptions = {
     // origin: "http://localhost:3000",
@@ -51,7 +51,7 @@ const main = async () => {
     session({
       name: COOKIE_NAME,
       store: new RedisStore({
-        client: redisClient,
+        client: redis,
         disableTouch: true,
       }),
       saveUninitialized: false,
@@ -82,7 +82,7 @@ const main = async () => {
       resolvers: [HelloResolver, PostResolver, UserResolver],
       validate: false,
     }),
-    context: ({ req, res }) => ({ em, req, res }),
+    context: ({ req, res }) => ({ em, req, res, redis }),
   });
 
   await apolloServer.start();
