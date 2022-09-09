@@ -13,6 +13,9 @@ import session from "express-session";
 import Redis from "ioredis";
 import connectRedis from "connect-redis";
 import cors from "cors";
+import { DataSource } from "typeorm";
+import { Post } from "./entities/Post";
+import { User } from "./entities/User";
 // import { sendEmail } from "./utils/sendEmail";
 
 declare module "express-session" {
@@ -23,10 +26,19 @@ declare module "express-session" {
 
 const main = async () => {
   // sendEmail("usmariner@proton.me", "Hello There");
-  const orm = await MikroORM.init(mikroConfig);
+  // const orm = await MikroORM.init(mikroConfig);
+  const typormConnection = new DataSource({
+    type: "postgres",
+    database: "lireddit2",
+    username: "postgres",
+    password: "postgres",
+    logging: true,
+    synchronize: true,
+    entities: [Post, User],
+  });
 
-  await orm.getMigrator().up();
-  const em = orm.em.fork();
+  // await orm.getMigrator().up();
+  // const em = orm.em.fork();
 
   const app = express();
   const redis = new Redis();
@@ -82,7 +94,12 @@ const main = async () => {
       resolvers: [HelloResolver, PostResolver, UserResolver],
       validate: false,
     }),
-    context: ({ req, res }) => ({ em, req, res, redis }),
+    context: ({ req, res }) => ({
+      // em,
+      req,
+      res,
+      redis,
+    }),
   });
 
   await apolloServer.start();

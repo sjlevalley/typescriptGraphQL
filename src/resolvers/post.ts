@@ -6,16 +6,13 @@ import { Arg, Ctx, Int, Mutation, Query, Resolver } from "type-graphql";
 @Resolver()
 export class PostResolver {
   @Query(() => [Post])
-  posts(@Ctx() ctx: MyContext): Promise<Post[]> {
-    return ctx.em.find(Post, {});
+  posts(): Promise<Post[]> {
+    return Post.find();
   }
 
   @Query(() => Post, { nullable: true })
-  post(
-    @Arg("id", () => Int) id: number,
-    @Ctx() ctx: MyContext
-  ): Promise<Post | null> {
-    return ctx.em.findOne(Post, { id });
+  post(@Arg("id") id: number): Promise<Post | undefined> {
+    return Post.findOne(id);
   }
 
   @Mutation(() => Post)
