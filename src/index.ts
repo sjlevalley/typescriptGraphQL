@@ -1,8 +1,6 @@
 import "dotenv/config";
 import "reflect-metadata";
-import { MikroORM } from "@mikro-orm/core";
 import { COOKIE_NAME, __prod__ } from "./constants";
-import mikroConfig from "./mikro-orm.config";
 import express from "express";
 import { ApolloServer } from "apollo-server-express";
 import { buildSchema } from "type-graphql";
@@ -24,27 +22,31 @@ declare module "express-session" {
   }
 }
 
+export const typormConnection = new DataSource({
+  type: "postgres",
+  database: "lireddit2",
+  username: "postgres",
+  password: "postgres",
+  logging: true,
+  synchronize: true,
+  entities: [Post, User],
+});
+
 const main = async () => {
   // sendEmail("usmariner@proton.me", "Hello There");
-  // const orm = await MikroORM.init(mikroConfig);
-  const typormConnection = new DataSource({
-    type: "postgres",
-    database: "lireddit2",
-    username: "postgres",
-    password: "postgres",
-    logging: true,
-    synchronize: true,
-    entities: [Post, User],
-  });
-
-  // await orm.getMigrator().up();
-  // const em = orm.em.fork();
+  typormConnection
+    .initialize()
+    .then(() => {
+      console.log("Data Source has been initialized!");
+    })
+    .catch((err) => {
+      console.error("Error during Data Source initialization", err);
+    });
 
   const app = express();
   const redis = new Redis();
 
   let RedisStore = connectRedis(session);
-  // redis.connect().catch(console.error);
 
   const corsOptions = {
     // origin: "http://localhost:3000",
@@ -81,21 +83,12 @@ const main = async () => {
     })
   );
 
-  // app.set("trust proxy", true); //process.env.NODE_ENV !== "production");
-  // app.set("Access-Control-Allow-Origin", [
-  //   "https://studio.apollographql.com",
-  //   "http://localhost:4000",
-  //   "http://localhost:3000",
-  // ]);
-  // app.set("Access-Control-Allow-Credentials", true);
-
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
       resolvers: [HelloResolver, PostResolver, UserResolver],
       validate: false,
     }),
     context: ({ req, res }) => ({
-      // em,
       req,
       res,
       redis,
@@ -107,20 +100,7 @@ const main = async () => {
   apolloServer.applyMiddleware({
     app,
     cors: false,
-    // cors: {
-    //   origin: [
-    //     "https://studio.apollographql.com",
-    //     // "http://localhost:4000",
-    //     "http://localhost:3000",
-    //   ],
-    //   credentials: true,
-    // },
   });
-
-  // Added the followiing headers in the GraphQL Sandbox
-  // Access-Control-Allow-Origin: ["https://studio.apollographql.com", "http://localhost:4000",]
-  // Access-Control-Allow-Credentials: true
-  // x-forwarded-proto: https
 
   app.listen(4000, () => {
     console.log("App now listening on Localhost:4000");
