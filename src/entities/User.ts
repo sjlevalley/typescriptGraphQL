@@ -4,9 +4,11 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
+import { Post } from "./Post";
 
 @ObjectType() // Added for type-graphql
 @Entity()
@@ -34,4 +36,7 @@ export class User extends BaseEntity {
   // Field() property not present on this one because we do not want to allow users to access the password property
   @Column()
   password!: string;
+
+  @OneToMany(() => Post, (post) => post.creator)
+  posts: Post[];
 }

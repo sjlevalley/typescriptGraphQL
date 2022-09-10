@@ -30,7 +30,7 @@ exports.typormConnection = new typeorm_1.DataSource({
     entities: [Post_1.Post, User_1.User],
 });
 const main = async () => {
-    exports.typormConnection
+    await exports.typormConnection
         .initialize()
         .then(() => {
         console.log("Data Source has been initialized!");

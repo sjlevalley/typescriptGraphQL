@@ -34,7 +34,8 @@ export const typormConnection = new DataSource({
 
 const main = async () => {
   // sendEmail("usmariner@proton.me", "Hello There");
-  typormConnection
+
+  await typormConnection
     .initialize()
     .then(() => {
       console.log("Data Source has been initialized!");

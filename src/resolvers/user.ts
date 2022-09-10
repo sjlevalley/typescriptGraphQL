@@ -105,6 +105,7 @@ export class UserResolver {
 
   @Query(() => User, { nullable: true })
   me(@Ctx() { req }: MyContext) {
+    console.log(req.session);
     if (!req.session!.userId) {
       // if you are not logged in
       return null;
@@ -125,6 +126,12 @@ export class UserResolver {
     // Alternatively, to handle duplicate user error, can wrap the persistAndFlush around a try/catch and return the error in the catch statement
     let user;
     try {
+      // User.create({
+      //   username: options.username,
+      //   email: options.email,
+      //   password: hashedPassword,
+      // }).save()
+      // Alternative to this code above:
       const result = await typormConnection
         .createQueryBuilder()
         .insert()
@@ -138,11 +145,9 @@ export class UserResolver {
         ])
         .returning("*")
         .execute();
-      console.log("Result: ", result);
-      user = result.raw;
+      user = result.raw[0];
     } catch (e) {
       console.error(e);
-      console.log("Error: ", e);
       if (e.code === "23505") {
         return {
           errors: [
