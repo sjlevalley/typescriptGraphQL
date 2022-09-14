@@ -25,9 +25,16 @@ class PostInput {
 @Resolver()
 export class PostResolver {
   @Query(() => [Post])
-  posts(): Promise<Post[]> {
-    return Post.find();
-  }
+  posts(
+    @Arg("limit") limit: number,
+    @Arg("cursor") cursor: string
+  ): Promise<Post[]> {
+  //   return await dataSource
+  //   .getRepository(User)
+  //   .createQueryBuilder("user")
+  //   .where("user.id = :id", { id: 1 })
+  //   .getOne()
+  // }
 
   @Query(() => Post, { nullable: true })
   post(@Arg("id") id: number): Promise<Post | null> {
