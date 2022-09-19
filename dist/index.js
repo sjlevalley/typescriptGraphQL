@@ -20,6 +20,7 @@ const cors_1 = __importDefault(require("cors"));
 const typeorm_1 = require("typeorm");
 const Post_1 = require("./entities/Post");
 const User_1 = require("./entities/User");
+const path_1 = __importDefault(require("path"));
 exports.typormConnection = new typeorm_1.DataSource({
     type: "postgres",
     database: "lireddit2",
@@ -28,6 +29,7 @@ exports.typormConnection = new typeorm_1.DataSource({
     logging: true,
     synchronize: true,
     entities: [Post_1.Post, User_1.User],
+    migrations: [path_1.default.join(__dirname, "./migrations/*")],
 });
 const main = async () => {
     await exports.typormConnection
@@ -38,6 +40,7 @@ const main = async () => {
         .catch((err) => {
         console.error("Error during Data Source initialization", err);
     });
+    await exports.typormConnection.runMigrations();
     const app = (0, express_1.default)();
     const redis = new ioredis_1.default();
     let RedisStore = (0, connect_redis_1.default)(express_session_1.default);

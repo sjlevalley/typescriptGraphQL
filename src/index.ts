@@ -14,6 +14,7 @@ import cors from "cors";
 import { DataSource } from "typeorm";
 import { Post } from "./entities/Post";
 import { User } from "./entities/User";
+import path from "path";
 // import { sendEmail } from "./utils/sendEmail";
 
 declare module "express-session" {
@@ -30,6 +31,7 @@ export const typormConnection = new DataSource({
   logging: true,
   synchronize: true,
   entities: [Post, User],
+  migrations: [path.join(__dirname, "./migrations/*")],
 });
 
 const main = async () => {
@@ -43,6 +45,7 @@ const main = async () => {
     .catch((err) => {
       console.error("Error during Data Source initialization", err);
     });
+  await typormConnection.runMigrations();
 
   const app = express();
   const redis = new Redis();
