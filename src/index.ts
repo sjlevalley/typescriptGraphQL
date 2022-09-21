@@ -22,7 +22,7 @@ declare module "express-session" {
     userId: number;
   }
 }
-
+//
 export const typormConnection = new DataSource({
   type: "postgres",
   database: "lireddit2",
