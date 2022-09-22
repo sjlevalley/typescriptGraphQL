@@ -4,11 +4,13 @@ import {
   Arg,
   Ctx,
   Field,
+  FieldResolver,
   InputType,
   Int,
   Mutation,
   Query,
   Resolver,
+  Root,
   UseMiddleware,
 } from "type-graphql";
 import { Post } from "../entities/Post";
@@ -23,8 +25,19 @@ class PostInput {
 }
 
 // Note, need to set the typescript type AND the graphql type when using type-graphql
-@Resolver()
+@Resolver(Post)
 export class PostResolver {
+  @FieldResolver(() => String)
+  // This field resolver is used to perform the slice operation every time the Resolver receives a 'Post' object in a response,
+  // the user can receive the textSnippet in the graphQL query instead of the whole text
+  textSnippet(@Root() root: Post) {
+    if (root.text.length > 50) {
+      return `${root.text.slice(0, 50)}...`;
+    } else {
+      return root.text;
+    }
+  }
+
   @Query(() => [Post])
   posts(
     @Arg("limit", () => Int) limit: number,
