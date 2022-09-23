@@ -39,10 +39,12 @@ export class PostResolver {
   }
 
   @Query(() => [Post])
-  posts(
+  async posts(
     @Arg("limit", () => Int) limit: number,
     @Arg("cursor", () => String, { nullable: true }) cursor: string | null
   ): Promise<Post[]> {
+    console.log("Limit: ", limit);
+    console.log("Cursor: ", cursor);
     const realLimit = Math.min(10, limit);
     const queryBuilder = typormConnection // can conditionally add items to the query when using queryBuilder
       .getRepository(Post)
@@ -54,7 +56,7 @@ export class PostResolver {
         cursor: new Date(+cursor),
       });
     }
-    return queryBuilder.getMany();
+    return await queryBuilder.getMany();
   }
 
   @Query(() => Post, { nullable: true })

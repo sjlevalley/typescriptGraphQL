@@ -47,6 +47,8 @@ const main = async () => {
     });
   await typormConnection.runMigrations();
 
+  // await Post.delete({}); // delete posts from DB
+
   const app = express();
   const redis = new Redis();
 
