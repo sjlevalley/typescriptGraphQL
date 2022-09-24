@@ -8,6 +8,7 @@ import {
   InputType,
   Int,
   Mutation,
+  ObjectType,
   Query,
   Resolver,
   Root,
@@ -24,6 +25,14 @@ class PostInput {
   text: string;
 }
 
+@ObjectType()
+class PaginatedPosts {
+  @Field(() => [Post])
+  posts: Post[];
+  @Field()
+  hasMore: boolean;
+}
+
 // Note, need to set the typescript type AND the graphql type when using type-graphql
 @Resolver(Post)
 export class PostResolver {
@@ -38,23 +47,28 @@ export class PostResolver {
     }
   }
 
-  @Query(() => [Post])
+  @Query(() => PaginatedPosts)
   async posts(
     @Arg("limit", () => Int) limit: number,
     @Arg("cursor", () => String, { nullable: true }) cursor: string | null
-  ): Promise<Post[]> {
+  ): Promise<PaginatedPosts> {
     const realLimit = Math.min(10, limit);
+    const realLimitPlusOne = realLimit + 1;
     const queryBuilder = typormConnection // can conditionally add items to the query when using queryBuilder
       .getRepository(Post)
       .createQueryBuilder("p")
       .orderBy('"createdAt"', "DESC")
-      .take(realLimit);
+      .take(realLimitPlusOne);
     if (cursor) {
       queryBuilder.where('"createdAt" < :cursor', {
         cursor: new Date(+cursor),
       });
     }
-    return await queryBuilder.getMany();
+    const posts = await queryBuilder.getMany();
+    return {
+      posts: posts.slice(0, realLimit),
+      hasMore: posts.length === realLimitPlusOne,
+    };
   }
 
   @Query(() => Post, { nullable: true })
