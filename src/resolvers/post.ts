@@ -28,6 +28,8 @@ class PostInput {
 @Resolver(Post)
 export class PostResolver {
   @FieldResolver(() => String)
+  // This field resolver is used to perform the slice operation every time the Resolver receives a 'Post' object in a response,
+  // the user can receive the textSnippet in the graphQL query instead of the whole text
   textSnippet(@Root() root: Post) {
     if (root.text.length > 50) {
       return `${root.text.slice(0, 50)}...`;
