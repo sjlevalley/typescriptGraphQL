@@ -28,8 +28,6 @@ class PostInput {
 @Resolver(Post)
 export class PostResolver {
   @FieldResolver(() => String)
-  // This field resolver is used to perform the slice operation every time the Resolver receives a 'Post' object in a response,
-  // the user can receive the textSnippet in the graphQL query instead of the whole text
   textSnippet(@Root() root: Post) {
     if (root.text.length > 50) {
       return `${root.text.slice(0, 50)}...`;
@@ -43,8 +41,6 @@ export class PostResolver {
     @Arg("limit", () => Int) limit: number,
     @Arg("cursor", () => String, { nullable: true }) cursor: string | null
   ): Promise<Post[]> {
-    console.log("Limit: ", limit);
-    console.log("Cursor: ", cursor);
     const realLimit = Math.min(10, limit);
     const queryBuilder = typormConnection // can conditionally add items to the query when using queryBuilder
       .getRepository(Post)
