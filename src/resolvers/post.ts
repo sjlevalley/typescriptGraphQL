@@ -5,6 +5,7 @@ import {
   Ctx,
   Field,
   FieldResolver,
+  Info,
   InputType,
   Int,
   Mutation,
@@ -50,21 +51,50 @@ export class PostResolver {
   @Query(() => PaginatedPosts)
   async posts(
     @Arg("limit", () => Int) limit: number,
-    @Arg("cursor", () => String, { nullable: true }) cursor: string | null
+    @Arg("cursor", () => String, { nullable: true }) cursor: string | null,
+    @Info() info: any
   ): Promise<PaginatedPosts> {
     const realLimit = Math.min(10, limit);
     const realLimitPlusOne = realLimit + 1;
-    const queryBuilder = typormConnection // can conditionally add items to the query when using queryBuilder
-      .getRepository(Post)
-      .createQueryBuilder("p")
-      .orderBy('"createdAt"', "DESC")
-      .take(realLimitPlusOne);
+
+    const replacements: any[] = [realLimitPlusOne];
+
     if (cursor) {
-      queryBuilder.where('"createdAt" < :cursor', {
-        cursor: new Date(+cursor),
-      });
+      replacements.push(new Date(parseInt(cursor)));
     }
-    const posts = await queryBuilder.getMany();
+
+    const posts = await typormConnection.query(
+      `
+    select p.*,
+    json_build_object(
+      'id', u.id,
+      'username', u.username,
+      'email', u.email,
+      'createdAt', u."createdAt",
+      'updatedAt', u."updatedAt"
+      ) creator
+    from post p
+    inner join public.user u on u.id = p."creatorId"
+    ${cursor ? `where p."createdAt" < $2` : ""}
+    order by p."createdAt" DESC
+    limit $1
+    `,
+      replacements
+    );
+
+    // const queryBuilder = typormConnection // can conditionally add items to the query when using queryBuilder
+    //   .getRepository(Post)
+    //   .createQueryBuilder("p")
+    //   .innerJoinAndSelect("p.creator", "u", 'u.id = "p.creatorId"')
+    //   .orderBy('p."createdAt"', "DESC")
+    //   .take(realLimitPlusOne);
+    // if (cursor) {
+    //   queryBuilder.where('p."createdAt" < :cursor', {
+    //     cursor: new Date(+cursor),
+    //   });
+    // }
+    // const posts = await queryBuilder.getMany();
+    console.log("Posts: ", posts);
     return {
       posts: posts.slice(0, realLimit),
       hasMore: posts.length === realLimitPlusOne,
