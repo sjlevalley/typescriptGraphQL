@@ -15,6 +15,7 @@ import { DataSource } from "typeorm";
 import { Post } from "./entities/Post";
 import { User } from "./entities/User";
 import path from "path";
+import { Updoot } from "./entities/Updoot";
 // import { sendEmail } from "./utils/sendEmail";
 
 declare module "express-session" {
@@ -30,7 +31,7 @@ export const typormConnection = new DataSource({
   password: "postgres",
   logging: true,
   synchronize: true,
-  entities: [Post, User],
+  entities: [Post, User, Updoot],
   migrations: [path.join(__dirname, "./migrations/*")],
 });
 

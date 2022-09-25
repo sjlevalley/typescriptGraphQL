@@ -17,6 +17,7 @@ import {
 } from "type-graphql";
 import { Post } from "../entities/Post";
 import { typormConnection } from "../index";
+import { Updoot } from "../entities/Updoot";
 
 @InputType()
 class PostInput {
@@ -46,6 +47,37 @@ export class PostResolver {
     } else {
       return root.text;
     }
+  }
+
+  @Mutation(() => Boolean)
+  // @UseMiddleware(isAuth)
+  async vote(
+    @Arg("postId", () => Int) postId: number,
+    @Arg("value", () => Int) value: number,
+    @Ctx() { req }: MyContext
+  ) {
+    const isUpdoot = value !== -1;
+    const realValue = isUpdoot ? 1 : -1;
+    const { userId } = req.session;
+    // await Updoot.insert({
+    //   userId,
+    //   postId,
+    //   value: realValue,
+    // });
+    await typormConnection.query(
+      `
+      START TRANSACTION;
+      INSERT INTO updoot ("userId", "postId", value)
+      values (${userId}, ${postId}, ${realValue});
+
+      update post
+      set points = points + ${realValue}
+      where id = ${postId};
+
+      COMMIT
+      `
+    );
+    return true;
   }
 
   @Query(() => PaginatedPosts)
@@ -94,7 +126,6 @@ export class PostResolver {
     //   });
     // }
     // const posts = await queryBuilder.getMany();
-    console.log("Posts: ", posts);
     return {
       posts: posts.slice(0, realLimit),
       hasMore: posts.length === realLimitPlusOne,
