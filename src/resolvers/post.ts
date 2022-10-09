@@ -59,24 +59,48 @@ export class PostResolver {
     const isUpdoot = value !== -1;
     const realValue = isUpdoot ? 1 : -1;
     const { userId } = req.session;
-    // await Updoot.insert({
-    //   userId,
-    //   postId,
-    //   value: realValue,
-    // });
-    await typormConnection.query(
-      `
-      START TRANSACTION;
-      INSERT INTO updoot ("userId", "postId", value)
-      values (${userId}, ${postId}, ${realValue});
+    const updoot = await Updoot.findOne({ where: { postId, userId } });
 
-      update post
-      set points = points + ${realValue}
-      where id = ${postId};
-
-      COMMIT
-      `
-    );
+    if (updoot && updoot.value !== realValue) {
+      // user has voted on this post already & they are changing their vote
+      await typormConnection.transaction(async (tm) => {
+        await tm.query(
+          `
+        UPDATE updoot 
+        set value = $1
+        where "postId" = $2 and "userId" = $3
+      `,
+          [realValue, postId, userId]
+        );
+        await tm.query(
+          `
+          update post
+          set points = points + $1
+          where id = $2;
+      `,
+          [2 * realValue, postId]
+        );
+      });
+    } else if (!updoot) {
+      // user hasn't voted on this post yet
+      await typormConnection.transaction(async (tm) => {
+        await tm.query(
+          `
+          INSERT INTO updoot ("userId", "postId", value)
+          values ($1, $2, $3);
+        `,
+          [userId, postId, realValue]
+        );
+        await tm.query(
+          `
+          update post
+          set points = points + $1
+          where id = $2;
+        `,
+          [realValue, postId]
+        );
+      });
+    }
     return true;
   }
 
@@ -84,17 +108,24 @@ export class PostResolver {
   async posts(
     @Arg("limit", () => Int) limit: number,
     @Arg("cursor", () => String, { nullable: true }) cursor: string | null,
-    @Info() info: any
-  ): Promise<PaginatedPosts> {
+    @Ctx() { req }: MyContext
+  ): // @Info() info: any
+  Promise<PaginatedPosts> {
     const realLimit = Math.min(10, limit);
     const realLimitPlusOne = realLimit + 1;
 
     const replacements: any[] = [realLimitPlusOne];
 
-    if (cursor) {
-      replacements.push(new Date(parseInt(cursor)));
+    if (req.session.userId) {
+      replacements.push(req.session.userId);
     }
 
+    let cursorIdx = 3;
+    if (cursor) {
+      replacements.push(new Date(parseInt(cursor)));
+      cursorIdx = replacements.length;
+    }
+    // console.log("USER ID", req.session.userId);
     const posts = await typormConnection.query(
       `
     select p.*,
@@ -104,28 +135,21 @@ export class PostResolver {
       'email', u.email,
       'createdAt', u."createdAt",
       'updatedAt', u."updatedAt"
-      ) creator
+      ) creator, 
+    ${
+      req.session.userId
+        ? `(select value from updoot where "userId" = $2 and "postId" = p.id) "voteStatus"`
+        : 'null as "voteStatus"'
+    }
     from post p
     inner join public.user u on u.id = p."creatorId"
-    ${cursor ? `where p."createdAt" < $2` : ""}
+    ${cursor ? `where p."createdAt" < $${cursorIdx}` : ""}
     order by p."createdAt" DESC
     limit $1
     `,
       replacements
     );
 
-    // const queryBuilder = typormConnection // can conditionally add items to the query when using queryBuilder
-    //   .getRepository(Post)
-    //   .createQueryBuilder("p")
-    //   .innerJoinAndSelect("p.creator", "u", 'u.id = "p.creatorId"')
-    //   .orderBy('p."createdAt"', "DESC")
-    //   .take(realLimitPlusOne);
-    // if (cursor) {
-    //   queryBuilder.where('p."createdAt" < :cursor', {
-    //     cursor: new Date(+cursor),
-    //   });
-    // }
-    // const posts = await queryBuilder.getMany();
     return {
       posts: posts.slice(0, realLimit),
       hasMore: posts.length === realLimitPlusOne,
