@@ -109,10 +109,14 @@ export class PostResolver {
     @Arg("limit", () => Int) limit: number,
     @Arg("cursor", () => String, { nullable: true }) cursor: string | null,
     @Ctx() { req }: MyContext
-  ): // @Info() info: any
-  Promise<PaginatedPosts> {
+  ): Promise<PaginatedPosts> {
     const realLimit = Math.min(10, limit);
     const realLimitPlusOne = realLimit + 1;
+
+    console.log(
+      "USER ID USER ID USER ID ***************************************",
+      req.session.userId
+    );
 
     const replacements: any[] = [realLimitPlusOne];
 
@@ -125,7 +129,6 @@ export class PostResolver {
       replacements.push(new Date(parseInt(cursor)));
       cursorIdx = replacements.length;
     }
-    // console.log("USER ID", req.session.userId);
     const posts = await typormConnection.query(
       `
     select p.*,
@@ -135,11 +138,11 @@ export class PostResolver {
       'email', u.email,
       'createdAt', u."createdAt",
       'updatedAt', u."updatedAt"
-      ) creator, 
+      ) creator 
     ${
       req.session.userId
-        ? `(select value from updoot where "userId" = $2 and "postId" = p.id) "voteStatus"`
-        : 'null as "voteStatus"'
+        ? `, (select value from updoot where "userId" = $2 and "postId" = p.id) "voteStatus"`
+        : ', null as "voteStatus"'
     }
     from post p
     inner join public.user u on u.id = p."creatorId"
@@ -149,7 +152,6 @@ export class PostResolver {
     `,
       replacements
     );
-
     return {
       posts: posts.slice(0, realLimit),
       hasMore: posts.length === realLimitPlusOne,
@@ -157,8 +159,15 @@ export class PostResolver {
   }
 
   @Query(() => Post, { nullable: true })
-  post(@Arg("id") id: number): Promise<Post | null> {
-    return Post.findOneBy({ id });
+  async post(@Arg("id", () => Int) id: number): Promise<Post | null> {
+    const post = await Post.find({
+      where: { id },
+      relations: ["creator"],
+    });
+    if (!post[0]) {
+      return null;
+    }
+    return post[0];
   }
 
   @Mutation(() => Post)
