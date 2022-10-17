@@ -1,11 +1,9 @@
-import { isAuth } from "../middleware/isAuth";
 import { MyContext } from "src/types";
 import {
   Arg,
   Ctx,
   Field,
   FieldResolver,
-  Info,
   InputType,
   Int,
   Mutation,
@@ -16,8 +14,10 @@ import {
   UseMiddleware,
 } from "type-graphql";
 import { Post } from "../entities/Post";
-import { typormConnection } from "../index";
 import { Updoot } from "../entities/Updoot";
+import { User } from "../entities/User";
+import { typormConnection } from "../index";
+import { isAuth } from "../middleware/isAuth";
 
 @InputType()
 class PostInput {
@@ -39,7 +39,7 @@ class PaginatedPosts {
 @Resolver(Post)
 export class PostResolver {
   @FieldResolver(() => String)
-  // This field resolver is used to perform the slice operation every time the Resolver receives a 'Post' object in a response,
+  // Field Resolvers are used to perform the slice operation every time the Resolver receives a 'Post' object in a response,
   // the user can receive the textSnippet in the graphQL query instead of the whole text
   textSnippet(@Root() root: Post) {
     if (root.text.length > 50) {
@@ -47,6 +47,33 @@ export class PostResolver {
     } else {
       return root.text;
     }
+  }
+
+  @FieldResolver(() => User)
+  creator(@Root() post: Post, @Ctx() { userLoader }: MyContext) {
+    return userLoader.load(post.creatorId);
+  }
+
+  @FieldResolver(() => Int, { nullable: true })
+  async voteStatus(
+    @Root() post: Post,
+    @Ctx() { updootLoader, req }: MyContext
+  ) {
+    console.log(
+      "USER ID USER ID USER ID ***************************************",
+      req.session.userId
+    );
+
+    if (!req.session.userId) {
+      return null;
+    }
+
+    const updoot = await updootLoader.load({
+      postId: post.id,
+      userId: req.session.userId,
+    });
+
+    return updoot ? updoot.value : null;
   }
 
   @Mutation(() => Boolean)
@@ -113,40 +140,16 @@ export class PostResolver {
     const realLimit = Math.min(10, limit);
     const realLimitPlusOne = realLimit + 1;
 
-    console.log(
-      "USER ID USER ID USER ID ***************************************",
-      req.session.userId
-    );
-
     const replacements: any[] = [realLimitPlusOne];
 
-    if (req.session.userId) {
-      replacements.push(req.session.userId);
-    }
-
-    let cursorIdx = 3;
     if (cursor) {
       replacements.push(new Date(parseInt(cursor)));
-      cursorIdx = replacements.length;
     }
     const posts = await typormConnection.query(
       `
-    select p.*,
-    json_build_object(
-      'id', u.id,
-      'username', u.username,
-      'email', u.email,
-      'createdAt', u."createdAt",
-      'updatedAt', u."updatedAt"
-      ) creator 
-    ${
-      req.session.userId
-        ? `, (select value from updoot where "userId" = $2 and "postId" = p.id) "voteStatus"`
-        : ', null as "voteStatus"'
-    }
+    select p.*
     from post p
-    inner join public.user u on u.id = p."creatorId"
-    ${cursor ? `where p."createdAt" < $${cursorIdx}` : ""}
+    ${cursor ? `where p."createdAt" < $2` : ""}
     order by p."createdAt" DESC
     limit $1
     `,
@@ -160,14 +163,11 @@ export class PostResolver {
 
   @Query(() => Post, { nullable: true })
   async post(@Arg("id", () => Int) id: number): Promise<Post | null> {
-    const post = await Post.find({
-      where: { id },
-      relations: ["creator"],
-    });
-    if (!post[0]) {
+    const post = await Post.findOneBy({ id });
+    if (!post) {
       return null;
     }
-    return post[0];
+    return post;
   }
 
   @Mutation(() => Post)
