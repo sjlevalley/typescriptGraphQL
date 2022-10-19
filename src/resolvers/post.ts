@@ -59,12 +59,6 @@ export class PostResolver {
     @Root() post: Post,
     @Ctx() { updootLoader, req }: MyContext
   ) {
-    console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&");
-    // console.log(
-    //   "USER ID USER ID USER ID ***************************************",
-    //   req.session.userId
-    // );
-
     if (!req.session.userId) {
       return null;
     }
@@ -140,11 +134,6 @@ export class PostResolver {
   ): Promise<PaginatedPosts> {
     const realLimit = Math.min(10, limit);
     const realLimitPlusOne = realLimit + 1;
-
-    console.log(
-      "USER ID USER ID POSTS ***************************************",
-      req.session.userId
-    );
 
     const replacements: any[] = [realLimitPlusOne];
 
