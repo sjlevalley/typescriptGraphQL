@@ -14,7 +14,7 @@ import {
   UseMiddleware,
 } from "type-graphql";
 import { Post } from "../entities/Post";
-import { Updoot } from "../entities/Updoot";
+import { Vote } from "../entities/Vote";
 import { User } from "../entities/User";
 import { typormConnection } from "../index";
 import { isAuth } from "../middleware/isAuth";
@@ -55,20 +55,17 @@ export class PostResolver {
   }
 
   @FieldResolver(() => Int, { nullable: true })
-  async voteStatus(
-    @Root() post: Post,
-    @Ctx() { updootLoader, req }: MyContext
-  ) {
+  async voteStatus(@Root() post: Post, @Ctx() { voteLoader, req }: MyContext) {
     if (!req.session.userId) {
       return null;
     }
 
-    const updoot = await updootLoader.load({
+    const vote = await voteLoader.load({
       postId: post.id,
       userId: req.session.userId,
     });
 
-    return updoot ? updoot.value : null;
+    return vote ? vote.value : null;
   }
 
   @Mutation(() => Boolean)
@@ -78,17 +75,17 @@ export class PostResolver {
     @Arg("value", () => Int) value: number,
     @Ctx() { req }: MyContext
   ) {
-    const isUpdoot = value !== -1;
-    const realValue = isUpdoot ? 1 : -1;
+    const isvote = value !== -1;
+    const realValue = isvote ? 1 : -1;
     const { userId } = req.session;
-    const updoot = await Updoot.findOne({ where: { postId, userId } });
+    const vote = await Vote.findOne({ where: { postId, userId } });
 
-    if (updoot && updoot.value !== realValue) {
+    if (vote && vote.value !== realValue) {
       // user has voted on this post already & they are changing their vote
       await typormConnection.transaction(async (tm) => {
         await tm.query(
           `
-        UPDATE updoot 
+        UPDATE vote 
         set value = $1
         where "postId" = $2 and "userId" = $3
       `,
@@ -103,12 +100,12 @@ export class PostResolver {
           [2 * realValue, postId]
         );
       });
-    } else if (!updoot) {
+    } else if (!vote) {
       // user hasn't voted on this post yet
       await typormConnection.transaction(async (tm) => {
         await tm.query(
           `
-          INSERT INTO updoot ("userId", "postId", value)
+          INSERT INTO vote ("userId", "postId", value)
           values ($1, $2, $3);
         `,
           [userId, postId, realValue]
@@ -129,8 +126,7 @@ export class PostResolver {
   @Query(() => PaginatedPosts)
   async posts(
     @Arg("limit", () => Int) limit: number,
-    @Arg("cursor", () => String, { nullable: true }) cursor: string | null,
-    @Ctx() { req }: MyContext
+    @Arg("cursor", () => String, { nullable: true }) cursor: string | null
   ): Promise<PaginatedPosts> {
     const realLimit = Math.min(10, limit);
     const realLimitPlusOne = realLimit + 1;
@@ -209,7 +205,7 @@ export class PostResolver {
     // if (post?.creatorId !== req.session.userId) {
     //   throw new Error("not authorized");
     // }
-    // await Updoot.delete({ postId: id });
+    // await Vote.delete({ postId: id });
     // await Post.delete({ id });
 
     // CASCADING DELETE WAY (onDelete: 'CASCADE' added as an option to the entity)

@@ -15,9 +15,9 @@ import { DataSource } from "typeorm";
 import { Post } from "./entities/Post";
 import { User } from "./entities/User";
 import path from "path";
-import { Updoot } from "./entities/Updoot";
+import { Vote } from "./entities/Vote";
 import { createUserLoader } from "./utils/createUserLoader";
-import { createUpdootLoader } from "./utils/createUpdootLoader";
+import { createVoteLoader } from "./utils/createVoteLoader";
 // import { sendEmail } from "./utils/sendEmail";
 
 declare module "express-session" {
@@ -33,7 +33,7 @@ export const typormConnection = new DataSource({
   password: "postgres",
   logging: true,
   synchronize: true,
-  entities: [Post, User, Updoot],
+  entities: [Post, User, Vote],
   migrations: [path.join(__dirname, "./migrations/*")],
 });
 
@@ -102,7 +102,7 @@ const main = async () => {
       res,
       redis,
       userLoader: createUserLoader(),
-      updootLoader: createUpdootLoader(),
+      voteLoader: createVoteLoader(),
     }),
   });
 

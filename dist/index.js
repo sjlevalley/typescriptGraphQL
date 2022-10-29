@@ -21,9 +21,9 @@ const typeorm_1 = require("typeorm");
 const Post_1 = require("./entities/Post");
 const User_1 = require("./entities/User");
 const path_1 = __importDefault(require("path"));
-const Updoot_1 = require("./entities/Updoot");
+const Vote_1 = require("./entities/Vote");
 const createUserLoader_1 = require("./utils/createUserLoader");
-const createUpdootLoader_1 = require("./utils/createUpdootLoader");
+const createVoteLoader_1 = require("./utils/createVoteLoader");
 exports.typormConnection = new typeorm_1.DataSource({
     type: "postgres",
     database: "lireddit2",
@@ -31,7 +31,7 @@ exports.typormConnection = new typeorm_1.DataSource({
     password: "postgres",
     logging: true,
     synchronize: true,
-    entities: [Post_1.Post, User_1.User, Updoot_1.Updoot],
+    entities: [Post_1.Post, User_1.User, Vote_1.Vote],
     migrations: [path_1.default.join(__dirname, "./migrations/*")],
 });
 const main = async () => {
@@ -82,7 +82,7 @@ const main = async () => {
             res,
             redis,
             userLoader: (0, createUserLoader_1.createUserLoader)(),
-            updootLoader: (0, createUpdootLoader_1.createUpdootLoader)(),
+            voteLoader: (0, createVoteLoader_1.createVoteLoader)(),
         }),
     });
     await apolloServer.start();

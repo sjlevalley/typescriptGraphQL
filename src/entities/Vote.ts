@@ -7,24 +7,24 @@ import { ObjectType } from "type-graphql";
 // many to many
 // user <-> posts
 // user -> join table <- posts
-// user -> updoot <- posts
+// user -> vote <- posts
 
 @ObjectType()
 @Entity()
-export class Updoot extends BaseEntity {
+export class Vote extends BaseEntity {
   @Column({ type: "int" })
   value: number;
 
   @PrimaryColumn()
   userId: number;
 
-  @ManyToOne(() => User, (user) => user.updoots)
+  @ManyToOne(() => User, (user) => user.votes)
   user: User;
 
   @PrimaryColumn()
   postId: number;
 
-  @ManyToOne(() => Post, (post) => post.updoots, {
+  @ManyToOne(() => Post, (post) => post.votes, {
     onDelete: "CASCADE",
   })
   post: Post;

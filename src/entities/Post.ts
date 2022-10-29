@@ -10,7 +10,7 @@ import {
 } from "typeorm";
 import { Field, Int, ObjectType } from "type-graphql";
 import { User } from "./User";
-import { Updoot } from "./Updoot";
+import { Vote } from "./Vote";
 
 @ObjectType() // Added for type-graphql
 @Entity()
@@ -50,6 +50,6 @@ export class Post extends BaseEntity {
   @ManyToOne(() => User, (user) => user.posts)
   creator: User;
 
-  @OneToMany(() => Updoot, (updoot) => updoot.post)
-  updoots: Updoot[];
+  @OneToMany(() => Vote, (vote) => vote.post)
+  votes: Vote[];
 }
