@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "dotenv-safe/config";
 import "reflect-metadata";
 import { COOKIE_NAME, __prod__ } from "./constants";
 import express from "express";
@@ -28,11 +28,9 @@ declare module "express-session" {
 //
 export const typormConnection = new DataSource({
   type: "postgres",
-  database: "lireddit2",
-  username: "postgres",
-  password: "postgres",
+  url: process.env.DATABASE_URL,
   logging: true,
-  synchronize: true,
+  // synchronize: true,
   entities: [Post, User, Vote],
   migrations: [path.join(__dirname, "./migrations/*")],
 });
@@ -58,14 +56,15 @@ const main = async () => {
   let RedisStore = connectRedis(session);
 
   const corsOptions = {
-    // origin: "http://localhost:3000",
     origin: [
-      "https://studio.apollographql.com",
-      "http://localhost:4000",
-      "http://localhost:3000",
+      // "https://studio.apollographql.com",
+      // "http://localhost:4000",
+      process.env.CORS_ORIGIN,
     ],
     credentials: true, // access-control-allow-credentials:true
   };
+
+  app.set("proxy", 1);
 
   // Apply cors to all routes
   app.use(cors(corsOptions));
@@ -83,11 +82,11 @@ const main = async () => {
         httpOnly: true,
         sameSite: "lax",
         secure: __prod__,
+        domain: __prod__ ? ".codeponder.com" : undefined,
         // sameSite: "none",
         // secure: true, // cookie only works in https, if not using https in prod, you want it to be false. Also usually set it to false when trying to get things set up
       },
-      // secret: process.env.REDIS_SECRET,
-      secret: "3lMGIPkuu5#8O9ga$ywxI0zEVv3@6c**Gh5^9Nm5pcVHj0wyE4j#QChmEpLS",
+      secret: process.env.SESSION_SECRET,
       resave: false,
     })
   );
@@ -113,7 +112,7 @@ const main = async () => {
     cors: false,
   });
 
-  app.listen(4000, () => {
+  app.listen(+process.env.PORT, () => {
     console.log("App now listening on Localhost:4000");
   });
 };

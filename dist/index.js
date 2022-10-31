@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.typormConnection = void 0;
-require("dotenv/config");
+require("dotenv-safe/config");
 require("reflect-metadata");
 const constants_1 = require("./constants");
 const express_1 = __importDefault(require("express"));
@@ -26,11 +26,8 @@ const createUserLoader_1 = require("./utils/createUserLoader");
 const createVoteLoader_1 = require("./utils/createVoteLoader");
 exports.typormConnection = new typeorm_1.DataSource({
     type: "postgres",
-    database: "lireddit2",
-    username: "postgres",
-    password: "postgres",
+    url: process.env.DATABASE_URL,
     logging: true,
-    synchronize: true,
     entities: [Post_1.Post, User_1.User, Vote_1.Vote],
     migrations: [path_1.default.join(__dirname, "./migrations/*")],
 });
@@ -49,12 +46,11 @@ const main = async () => {
     let RedisStore = (0, connect_redis_1.default)(express_session_1.default);
     const corsOptions = {
         origin: [
-            "https://studio.apollographql.com",
-            "http://localhost:4000",
-            "http://localhost:3000",
+            process.env.CORS_ORIGIN,
         ],
         credentials: true,
     };
+    app.set("proxy", 1);
     app.use((0, cors_1.default)(corsOptions));
     app.use((0, express_session_1.default)({
         name: constants_1.COOKIE_NAME,
@@ -68,8 +64,9 @@ const main = async () => {
             httpOnly: true,
             sameSite: "lax",
             secure: constants_1.__prod__,
+            domain: constants_1.__prod__ ? ".codeponder.com" : undefined,
         },
-        secret: "3lMGIPkuu5#8O9ga$ywxI0zEVv3@6c**Gh5^9Nm5pcVHj0wyE4j#QChmEpLS",
+        secret: process.env.SESSION_SECRET,
         resave: false,
     }));
     const apolloServer = new apollo_server_express_1.ApolloServer({
@@ -90,7 +87,7 @@ const main = async () => {
         app,
         cors: false,
     });
-    app.listen(4000, () => {
+    app.listen(+process.env.PORT, () => {
         console.log("App now listening on Localhost:4000");
     });
 };
