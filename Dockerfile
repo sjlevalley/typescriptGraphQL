@@ -12,10 +12,14 @@ RUN npm install
 
 # Bundle app source
 COPY . .
-COPY .env.production .env
+COPY .env .
+COPY .env.production .
 
 RUN npm run build 
 ENV NODE_ENV production
+ENV DATABASE_URL postgresql://postgres:postgres@localhost:5432/lireddit2
+ENV PORT 4000
+ENV CORS_ORIGIN http://localhost:3000
 
 EXPOSE 8080
 CMD [ "node", "dist/index.js" ]
