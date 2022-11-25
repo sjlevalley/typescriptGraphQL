@@ -48,6 +48,7 @@ const main = async () => {
     });
   await typormConnection.runMigrations();
 
+  // Uncomment this line and start app one time to delete all posts from db
   // await Post.delete({}); // delete posts from DB
 
   const app = express();
@@ -56,11 +57,7 @@ const main = async () => {
   let RedisStore = connectRedis(session);
 
   const corsOptions = {
-    origin: [
-      // "https://studio.apollographql.com",
-      // "http://localhost:4000",
-      process.env.CORS_ORIGIN,
-    ],
+    origin: [process.env.CORS_ORIGIN],
     credentials: true, // access-control-allow-credentials:true
   };
 
@@ -82,7 +79,8 @@ const main = async () => {
         httpOnly: true,
         sameSite: "lax",
         secure: __prod__,
-        domain: __prod__ ? ".codeponder.com" : undefined,
+        // domain: __prod__ ? ".codeponder.com" : undefined,
+        domain: __prod__ ? undefined : undefined,
         // sameSite: "none",
         // secure: true, // cookie only works in https, if not using https in prod, you want it to be false. Also usually set it to false when trying to get things set up
       },
@@ -113,7 +111,7 @@ const main = async () => {
   });
 
   app.listen(+process.env.PORT, () => {
-    console.log("App now listening on Localhost:4000");
+    console.log(`App now listening on Localhost:${+process.env.PORT}`);
   });
 };
 

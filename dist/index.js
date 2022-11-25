@@ -45,9 +45,7 @@ const main = async () => {
     const redis = new ioredis_1.default();
     let RedisStore = (0, connect_redis_1.default)(express_session_1.default);
     const corsOptions = {
-        origin: [
-            process.env.CORS_ORIGIN,
-        ],
+        origin: [process.env.CORS_ORIGIN],
         credentials: true,
     };
     app.set("proxy", 1);
@@ -64,7 +62,7 @@ const main = async () => {
             httpOnly: true,
             sameSite: "lax",
             secure: constants_1.__prod__,
-            domain: constants_1.__prod__ ? ".codeponder.com" : undefined,
+            domain: constants_1.__prod__ ? undefined : undefined,
         },
         secret: process.env.SESSION_SECRET,
         resave: false,
@@ -88,7 +86,7 @@ const main = async () => {
         cors: false,
     });
     app.listen(+process.env.PORT, () => {
-        console.log("App now listening on Localhost:4000");
+        console.log(`App now listening on Localhost:${+process.env.PORT}`);
     });
 };
 main().catch((e) => {
