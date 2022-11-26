@@ -28,8 +28,8 @@ declare module "express-session" {
 
 export const typormConnection = new DataSource({
   type: "postgres",
-  // url: process.env.DATABASE_URL,
-  url: "postgresql://postgres:postgres@host.docker.internal:5432/redditish1",
+  // url: `${process.env.DATABASE_URL}`,
+  url: "postgresql://postgres:postgres@host.docker.internal:5432/lireddit2",
   logging: true,
   // synchronize: true,
   entities: [Post, User, Vote],
@@ -40,6 +40,13 @@ const main = async () => {
   // sendEmail("usmariner@proton.me", "Hello There");
 
   let retriesPostgres = 5;
+  let retryDelay = 5000;
+  if (process.env.DB_CONNECTION_RETRIES) {
+    retriesPostgres = +process.env.DB_CONNECTION_RETRIES;
+  }
+  if (process.env.DB_CONNECTION_RETRY_DELAY) {
+    retryDelay = +process.env.DB_CONNECTION_RETRY_DELAY;
+  }
   while (retriesPostgres) {
     try {
       await typormConnection.initialize();
@@ -50,7 +57,7 @@ const main = async () => {
       retriesPostgres -= 1;
       console.log(`${retriesPostgres} RETRIES REMAINING`);
       // wait 5 seconds before retrying
-      await new Promise((res) => setTimeout(res, 5000));
+      await new Promise((res) => setTimeout(res, retryDelay));
     }
   }
   await typormConnection.runMigrations();
@@ -64,8 +71,8 @@ const main = async () => {
   let RedisStore = connectRedis(session);
 
   const corsOptions = {
-    // origin: [process.env.CORS_ORIGIN],
-    origin: "http://localhost:3000",
+    origin: `${process.env.CORS_ORIGIN}`,
+    // origin: "http://localhost:3000",
     credentials: true, // access-control-allow-credentials:true
   };
 
@@ -121,8 +128,8 @@ const main = async () => {
     cors: false,
   });
 
-  app.listen(4000, () => {
-    console.log(`App now listening on Localhost: 4000`);
+  app.listen(`${+process.env.PORT}`, () => {
+    console.log(`App now listening on Localhost: ${process.env.PORT}`);
   });
   // app.listen(+process.env.PORT, () => {
   //   console.log(`App now listening on Localhost:${+process.env.PORT}`);

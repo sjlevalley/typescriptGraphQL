@@ -3,6 +3,9 @@ node_modules
 # you should add that
 # .env
 
+data
+pgdata
+
 notes.txt
 .env
 .env.production
