@@ -1,0 +1,46 @@
+version: "3.7"
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: redditish1
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    # network_mode: bridge
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data:/data
+    # network_mode: bridge
+
+  app-backend:
+    image: reddit-ish-server
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/redditish1
+      CORS_ORIGIN: http://localhost:3000
+      NODE_ENV: development
+      PORT: 4000
+      SESSION_SECRET: 3lMGIPkuu5#8O9ga$ywxI0zEVv3@6c**Gh5^9Nm5pcVHj0wyE4j#QChmEpLS
+    ports:
+      - "4000:4000"
+    # network_mode: bridge
+    depends_on:
+      - db
+      - redis
+
+  # app-frontend:
+  #   image: reddit-ish-web
+  #   ports:
+  #     - "3000:3000"
+  #   # network_mode: bridge
+  #   depends_on:
+  #     - db
+  #     - cache
+  #     - app-backend

@@ -25,10 +25,11 @@ declare module "express-session" {
     userId: number;
   }
 }
-//
+
 export const typormConnection = new DataSource({
   type: "postgres",
-  url: process.env.DATABASE_URL,
+  // url: process.env.DATABASE_URL,
+  url: "postgresql://postgres:postgres@host.docker.internal:5432/redditish1",
   logging: true,
   // synchronize: true,
   entities: [Post, User, Vote],
@@ -38,26 +39,33 @@ export const typormConnection = new DataSource({
 const main = async () => {
   // sendEmail("usmariner@proton.me", "Hello There");
 
-  await typormConnection
-    .initialize()
-    .then(() => {
+  let retriesPostgres = 5;
+  while (retriesPostgres) {
+    try {
+      await typormConnection.initialize();
       console.log("Data Source has been initialized!");
-    })
-    .catch((err) => {
-      console.error("Error during Data Source initialization", err);
-    });
+      break;
+    } catch (error) {
+      console.error("Error during Data Source initialization", error);
+      retriesPostgres -= 1;
+      console.log(`${retriesPostgres} RETRIES REMAINING`);
+      // wait 5 seconds before retrying
+      await new Promise((res) => setTimeout(res, 5000));
+    }
+  }
   await typormConnection.runMigrations();
 
   // Uncomment this line and start app one time to delete all posts from db
   // await Post.delete({}); // delete posts from DB
 
   const app = express();
-  const redis = new Redis();
+  const redis = new Redis({ host: "redis" });
 
   let RedisStore = connectRedis(session);
 
   const corsOptions = {
-    origin: [process.env.CORS_ORIGIN],
+    // origin: [process.env.CORS_ORIGIN],
+    origin: "http://localhost:3000",
     credentials: true, // access-control-allow-credentials:true
   };
 
@@ -72,19 +80,22 @@ const main = async () => {
       store: new RedisStore({
         client: redis,
         disableTouch: true,
+        port: 6379,
       }),
       saveUninitialized: false,
       cookie: {
         maxAge: 1000 * 60 * 60 * 24 * 365 * 10, // 10 years
         httpOnly: true,
         sameSite: "lax",
-        secure: __prod__,
+        // secure: __prod__,
+        secure: false,
         // domain: __prod__ ? ".codeponder.com" : undefined,
         domain: __prod__ ? undefined : undefined,
         // sameSite: "none",
         // secure: true, // cookie only works in https, if not using https in prod, you want it to be false. Also usually set it to false when trying to get things set up
       },
-      secret: process.env.SESSION_SECRET,
+      // secret: process.env.SESSION_SECRET,
+      secret: "3lMGIPkuu5#8O9ga$ywxI0zEVv3@6c**Gh5^9Nm5pcVHj0wyE4j#QChmEpLS",
       resave: false,
     })
   );
@@ -110,9 +121,12 @@ const main = async () => {
     cors: false,
   });
 
-  app.listen(+process.env.PORT, () => {
-    console.log(`App now listening on Localhost:${+process.env.PORT}`);
+  app.listen(4000, () => {
+    console.log(`App now listening on Localhost: 4000`);
   });
+  // app.listen(+process.env.PORT, () => {
+  //   console.log(`App now listening on Localhost:${+process.env.PORT}`);
+  // });
 };
 
 main().catch((e) => {
