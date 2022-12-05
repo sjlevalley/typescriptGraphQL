@@ -1,29 +1,32 @@
 version: "3.7"
 services:
   db:
-    image: postgres
+    # docker run --name postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=reddit-ish -v pgdata:/var/lib/postgresql/data -p 5432:5432 -d postgres:alpine
+    image: postgres:alpine
+    restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: lireddit2
+      POSTGRES_DB: reddit-ish
     volumes:
-      - ./pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     # network_mode: bridge
 
   redis:
+    # docker run --name redis -v redisdata:/redisdata -p 6379:6379 -d redis:alpine
     image: redis:alpine
     ports:
       - "6379:6379"
     volumes:
-      - ./data:/data
+      - redisdata:/data
     # network_mode: bridge
 
   app-backend:
     image: reddit-ish-server
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/redditish1
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/reddit-ish
       CORS_ORIGIN: http://localhost:3000
       NODE_ENV: development
       PORT: 4000
@@ -35,6 +38,9 @@ services:
       - db
       - redis
 
+volumes:
+  pgdata:
+  redisdata:
   # app-frontend:
   #   image: reddit-ish-web
   #   ports:
