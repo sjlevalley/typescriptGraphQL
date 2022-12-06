@@ -29,7 +29,7 @@ declare module "express-session" {
 export const typormConnection = new DataSource({
   type: "postgres",
   // url: `${process.env.DATABASE_URL}`,
-  url: "postgresql://postgres:postgres@127.0.0.1:5432/reddit-ish",
+  url: "postgresql://postgres:postgres@host.docker.internal:5432/reddit-ish",
   logging: true,
   // synchronize: true,
   entities: [Post, User, Vote],
@@ -66,8 +66,8 @@ const main = async () => {
   // await Post.delete({}); // delete posts from DB
 
   const app = express();
-  // const redis = new Redis({ host: "redis" });
-  const redis = new Redis();
+  const redis = new Redis({ host: "redis" }); // Use this with Docker Compose
+  // const redis = new Redis();
 
   let RedisStore = connectRedis(session);
 

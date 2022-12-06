@@ -26,7 +26,7 @@ services:
   app-backend:
     image: reddit-ish-server
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/reddit-ish
+      DATABASE_URL: postgresql://postgres:postgres@host.docker.internal:5432/reddit-ish
       CORS_ORIGIN: http://localhost:3000
       NODE_ENV: development
       PORT: 4000

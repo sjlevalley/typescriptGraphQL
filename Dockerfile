@@ -18,7 +18,7 @@ COPY .env.production .
 # Bundle app source
 RUN npm run build 
 ENV NODE_ENV production
-ENV DATABASE_URL postgresql://postgres:postgres@localhost:5432/lireddit2
+ENV DATABASE_URL postgresql://postgres:postgres@localhost:5432/reddit-ish
 ENV PORT 4000
 ENV CORS_ORIGIN http://localhost:3000
 
