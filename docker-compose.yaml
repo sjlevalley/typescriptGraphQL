@@ -24,13 +24,9 @@ services:
     # network_mode: bridge
 
   app-backend:
-    image: reddit-ish-server
-    environment:
-      DATABASE_URL: postgresql://postgres:postgres@host.docker.internal:5432/reddit-ish
-      CORS_ORIGIN: http://localhost:3000
-      NODE_ENV: development
-      PORT: 4000
-      SESSION_SECRET: 3lMGIPkuu5#8O9ga$ywxI0zEVv3@6c**Gh5^9Nm5pcVHj0wyE4j#QChmEpLS
+    image: sjlevalley/reddit-ish-server
+    env_file:
+      - ./.env
     ports:
       - "4000:4000"
     # network_mode: bridge

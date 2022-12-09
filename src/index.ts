@@ -26,10 +26,11 @@ declare module "express-session" {
   }
 }
 
+const postgresDatabaseUrl = process.env.DATABASE_URL;
+
 export const typormConnection = new DataSource({
   type: "postgres",
-  // url: `${process.env.DATABASE_URL}`,
-  url: "postgresql://postgres:postgres@host.docker.internal:5432/reddit-ish",
+  url: postgresDatabaseUrl,
   logging: true,
   // synchronize: true,
   entities: [Post, User, Vote],
@@ -132,9 +133,6 @@ const main = async () => {
   app.listen(`${+process.env.PORT}`, () => {
     console.log(`App now listening on Localhost: ${process.env.PORT}`);
   });
-  // app.listen(+process.env.PORT, () => {
-  //   console.log(`App now listening on Localhost:${+process.env.PORT}`);
-  // });
 };
 
 main().catch((e) => {
