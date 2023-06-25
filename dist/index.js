@@ -24,9 +24,10 @@ const path_1 = __importDefault(require("path"));
 const Vote_1 = require("./entities/Vote");
 const createUserLoader_1 = require("./utils/createUserLoader");
 const createVoteLoader_1 = require("./utils/createVoteLoader");
+const postgresDatabaseUrl = process.env.DATABASE_URL;
 exports.typormConnection = new typeorm_1.DataSource({
     type: "postgres",
-    url: "postgresql://postgres:postgres@host.docker.internal:5432/lireddit2",
+    url: postgresDatabaseUrl,
     logging: true,
     entities: [Post_1.Post, User_1.User, Vote_1.Vote],
     migrations: [path_1.default.join(__dirname, "./migrations/*")],

@@ -19,7 +19,7 @@ COPY .env.production .
 RUN npm run build 
 # ENV NODE_ENV production
 ENV NODE_ENV development
-ENV DATABASE_URL postgresql://postgres:postgres@localhost:5432/reddit-ish
+ENV DATABASE_URL postgresql://postgres:postgres@localhost:5432/lireddit2
 ENV PORT 4000
 ENV CORS_ORIGIN http://localhost:3000
 ENV DB_CONNECTION_RETRIES 10

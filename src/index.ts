@@ -67,8 +67,8 @@ const main = async () => {
   // await Post.delete({}); // delete posts from DB
 
   const app = express();
-  const redis = new Redis({ host: "redis" }); // Use this with Docker Compose
-  // const redis = new Redis();
+  // const redis = new Redis({ host: "redis" }); // Use this with Docker Compose
+  const redis = new Redis(); // Use this with AWS ECS deployment
 
   let RedisStore = connectRedis(session);
 
