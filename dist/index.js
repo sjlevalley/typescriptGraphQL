@@ -70,6 +70,7 @@ const main = async () => {
             client: redis,
             disableTouch: true,
             port: 6379,
+            url: "redis://redis:6379",
         }),
         saveUninitialized: false,
         cookie: {
@@ -79,7 +80,7 @@ const main = async () => {
             secure: false,
             domain: constants_1.__prod__ ? undefined : undefined,
         },
-        secret: "3lMGIPkuu5#8O9ga$ywxI0zEVv3@6c**Gh5^9Nm5pcVHj0wyE4j#QChmEpLS",
+        secret: process.env.SESSION_SECRET,
         resave: false,
     }));
     const apolloServer = new apollo_server_express_1.ApolloServer({

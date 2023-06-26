@@ -1,13 +1,14 @@
 version: "3.7"
 services:
   db:
-    # docker run --name postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=reddit-ish -v pgdata:/var/lib/postgresql/data -p 5432:5432 -d postgres:alpine
+    # docker run --name postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=lireddit2 -v pgdata:/var/lib/postgresql/data -p 5432:5432 -d postgres:alpine
     image: postgres:alpine
+    container_name: postgres-instance
     restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: reddit-ish
+      POSTGRES_DB: lireddit2
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
@@ -16,33 +17,47 @@ services:
 
   redis:
     # docker run --name redis -v redisdata:/redisdata -p 6379:6379 -d redis:alpine
-    image: redis:alpine
+    container_name: redis-instance
+    restart: always
+    image: redis:latest
+    command: redis-server
     ports:
       - "6379:6379"
     volumes:
       - redisdata:/data
-    # network_mode: bridge
 
   app-backend:
-    image: sjlevalley/reddit-ish-server
-    env_file:
-      - ./.env
+    image: reddit-ish-backend
     ports:
       - "4000:4000"
     # network_mode: bridge
+    environment:
+      CORS_ORIGIN: http://localhost:3000
+      DATABASE_URL: postgresql://postgres:postgres@host.docker.internal:5432/lireddit2
+      # DATABASE_URL: postgresql://postgres:postgres@localhost:5432/lireddit2
+      NODE_ENV: development
+      # NODE_ENV: production
+      PORT: 4000
+      SESSION_SECRET: "3lMGIPkuu5#8O9ga$ywxI0zEVv3@6c**Gh5^9Nm5pcVHj0wyE4j#QChmEpLS"
+      # Number of times to retry to connect to DB
+      DB_CONNECTION_RETRIES: 10
+      # Delay before retrying to connect to DB after failed attempt (in milliseconds)
+      DB_CONNECTION_RETRY_DELAY: 5000
+      # REDIS_URL=127.0.0.1:6379
     depends_on:
       - db
       - redis
 
+  app-frontend:
+    image: reddit-ish-frontend
+    ports:
+      - "3000:3000"
+    # network_mode: bridge
+    depends_on:
+      - db
+      - redis
+      # - app-backend
+
 volumes:
   pgdata:
   redisdata:
-  # app-frontend:
-  #   image: reddit-ish-web
-  #   ports:
-  #     - "3000:3000"
-  #   # network_mode: bridge
-  #   depends_on:
-  #     - db
-  #     - cache
-  #     - app-backend

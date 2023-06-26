@@ -67,8 +67,8 @@ const main = async () => {
   // await Post.delete({}); // delete posts from DB
 
   const app = express();
-  // const redis = new Redis({ host: "redis" }); // Use this with Docker Compose
-  const redis = new Redis(); // Use this with AWS ECS deployment
+  const redis = new Redis({ host: "redis" }); // Use this with Docker Compose
+  // const redis = new Redis(); // Use this with AWS ECS deployment
 
   let RedisStore = connectRedis(session);
 
@@ -90,6 +90,7 @@ const main = async () => {
         client: redis,
         disableTouch: true,
         port: 6379,
+        url: "redis://redis:6379",
       }),
       saveUninitialized: false,
       cookie: {
@@ -103,8 +104,8 @@ const main = async () => {
         // sameSite: "none",
         // secure: true, // cookie only works in https, if not using https in prod, you want it to be false. Also usually set it to false when trying to get things set up
       },
-      // secret: process.env.SESSION_SECRET,
-      secret: "3lMGIPkuu5#8O9ga$ywxI0zEVv3@6c**Gh5^9Nm5pcVHj0wyE4j#QChmEpLS",
+      secret: process.env.SESSION_SECRET,
+      // secret: "3lMGIPkuu5#8O9ga$ywxI0zEVv3@6c**Gh5^9Nm5pcVHj0wyE4j#QChmEpLS",
       resave: false,
     })
   );
